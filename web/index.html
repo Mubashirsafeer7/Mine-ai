@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ur" dir="ltr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Mine AI</title>
+  <meta name="description" content="Mine AI — scratch se bana hua chat AI. No APIs." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧠</text></svg>" />
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="logo" aria-hidden="true">◈</span>
+        <div>
+          <h1>Mine AI</h1>
+          <p id="modelLine" class="sub">model load ho raha hai…</p>
+        </div>
+      </div>
+      <div class="controls">
+        <label class="control">
+          <span>Mode</span>
+          <select id="mode">
+            <option value="auto">Auto</option>
+            <option value="neural">Neural only</option>
+            <option value="memory">Memory only</option>
+          </select>
+        </label>
+        <label class="control">
+          <span>Temp <b id="tempValue">0.75</b></span>
+          <input id="temperature" type="range" min="0" max="1.4" step="0.05" value="0.75" />
+        </label>
+        <button id="clearBtn" class="ghost" type="button">Nayi chat</button>
+        <button id="themeBtn" class="ghost" type="button" aria-label="Theme badlen">◐</button>
+      </div>
+    </header>
+
+    <main id="chat" class="chat" aria-live="polite">
+      <div class="welcome" id="welcome">
+        <div class="welcome-logo">◈</div>
+        <h2>Salam! Main Mine AI hoon.</h2>
+        <p>
+          Main scratch se bana hoon — apna tokenizer, apna transformer, apna training loop.
+          Koi API nahi, sab kuch aap ke computer par.
+        </p>
+        <div class="chips">
+          <button class="chip" type="button">tumhara naam kya hai</button>
+          <button class="chip" type="button">tum kaise kaam karte ho</button>
+          <button class="chip" type="button">koi joke sunao</button>
+          <button class="chip" type="button">mujhe apna ai banana hai</button>
+        </div>
+      </div>
+    </main>
+
+    <form class="composer" id="composer">
+      <textarea
+        id="input"
+        rows="1"
+        placeholder="Kuch likhiye… (Enter bhejne ke liye, Shift+Enter nayi line)"
+        autocomplete="off"
+      ></textarea>
+      <button id="sendBtn" type="submit" aria-label="Bhejen">
+        <span class="send-icon">➤</span>
+      </button>
+    </form>
+
+    <footer class="footnote">
+      <span id="statusLine">Sab kuch local — koi data bahar nahi jata.</span>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

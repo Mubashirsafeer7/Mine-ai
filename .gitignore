@@ -1,0 +1,6 @@
+node_modules/
+npm-debug.log*
+.DS_Store
+models/tokenizer.json
+models/_*.json
+*.log

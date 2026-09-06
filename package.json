@@ -1,0 +1,20 @@
+{
+  "name": "mine-ai",
+  "version": "1.0.0",
+  "description": "Mine AI - apna khud ka chat AI, scratch se banaya hua. No APIs, no ML libraries.",
+  "type": "commonjs",
+  "main": "src/server.js",
+  "scripts": {
+    "tokenizer": "node src/scripts/build-tokenizer.js",
+    "train": "node --max-old-space-size=4096 src/scripts/train.js",
+    "chat": "node src/scripts/chat.js",
+    "start": "node src/server.js",
+    "test": "node test/run.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {},
+  "devDependencies": {},
+  "license": "MIT"
+}
