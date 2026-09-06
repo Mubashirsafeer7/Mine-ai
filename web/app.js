@@ -26,11 +26,16 @@ const savedTheme = (() => {
     return null;
   }
 })();
-if (savedTheme) document.documentElement.dataset.theme = savedTheme;
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  themeBtn.textContent = theme === 'light' ? 'Light' : 'Dark';
+}
+
+applyTheme(savedTheme === 'light' ? 'light' : 'dark');
 
 themeBtn.addEventListener('click', () => {
   const next = document.documentElement.dataset.theme === 'light' ? 'dark' : 'light';
-  document.documentElement.dataset.theme = next;
+  applyTheme(next);
   try {
     localStorage.setItem('mine-ai-theme', next);
   } catch (err) {

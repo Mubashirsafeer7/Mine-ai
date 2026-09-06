@@ -46,8 +46,15 @@ function sendJSON(res, status, body) {
 }
 
 function serveStatic(req, res, urlPath) {
-  const rel = urlPath === '/' ? 'index.html' : urlPath.replace(/^\/+/, '');
-  const filePath = path.join(WEB_DIR, rel);
+  let decoded;
+  try {
+    decoded = decodeURIComponent(urlPath);
+  } catch (err) {
+    res.writeHead(400).end('Bad request');
+    return;
+  }
+  const rel = decoded === '/' ? 'index.html' : decoded.replace(/^\/+/, '');
+  const filePath = path.normalize(path.join(WEB_DIR, rel));
   // Directory traversal band.
   if (!filePath.startsWith(WEB_DIR + path.sep) && filePath !== path.join(WEB_DIR, 'index.html')) {
     res.writeHead(403).end('Forbidden');

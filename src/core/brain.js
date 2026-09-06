@@ -37,7 +37,7 @@ function cleanReply(text) {
 /** Kya jawab itna kharab hai ke memory par jana behtar hai? */
 function looksDegenerate(text) {
   const clean = text.trim();
-  if (clean.length < 2) return true;
+  if (clean.length < 6) return true; // itna chhota jawab kaam ka nahi
   const words = clean.toLowerCase().split(/\s+/);
   if (words.length >= 4) {
     const unique = new Set(words);

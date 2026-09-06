@@ -193,7 +193,7 @@ body {
 
 .chip:hover { border-color: var(--accent); transform: translateY(-1px); }
 
-.row { display: flex; gap: 10px; align-items: flex-end; }
+.row { display: flex; gap: 10px; align-items: flex-start; }
 .row.user { justify-content: flex-end; }
 
 .avatar {

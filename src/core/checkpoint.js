@@ -23,7 +23,17 @@ function encodeWeights(params) {
 
 function decodeWeights(params, b64) {
   const buf = Buffer.from(b64, 'base64');
-  const flat = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+  if (buf.byteLength % 4 !== 0) throw new Error('checkpoint weights corrupt (length not a multiple of 4)');
+  // Buffer.from pool se aa sakta hai aur 4-byte aligned na ho — Float32Array
+  // aligned offset mangta hai, is liye zaroorat par apna buffer bana lete hain.
+  let flat;
+  if (buf.byteOffset % 4 === 0) {
+    flat = new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+  } else {
+    const copy = new ArrayBuffer(buf.byteLength);
+    new Uint8Array(copy).set(buf);
+    flat = new Float32Array(copy);
+  }
   let off = 0;
   for (const p of params) {
     p.data.set(flat.subarray(off, off + p.size));
