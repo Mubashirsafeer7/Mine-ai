@@ -133,30 +133,20 @@ Har jawab ke neeche badge batata hai wo kahan se aaya: `neural`, `memory`,
 
 ## Interface
 
-Alag pehchaan: **tarasha hua gem** (Mine = khaan) aur ink par **ember** rang.
+Saada rakha gaya hai. Light theme default hai; dark theme toggle mein hai.
 Koi font download nahi hota, koi CDN nahi — system fonts aur inline SVG.
 
-- **Chat history** browser mein rehti hai (`localStorage`), server par nahi.
-  Search, delete, aur din ke hisab se grouping — sab kaam karta hai.
-- **Source badge** har jawab ke neeche: `neural` / `memory` / `memory rescue` /
-  `fallback`, sath mein waqt, tokens aur tok/s. Ye chhupaya nahi jata —
-  aap ko hamesha pata hoga jawab kahan se aaya.
-- **"Andar" panel** — model ki poori tafseel: parameters, layers, heads,
-  vocab, context meter, aur token ka rasta.
-- **Mode** composer mein hi: Auto · Neural · Memory.
-- **Stop** — jawab ke beech mein rok sakte hain, **Dobara** se naya jawab.
-- Dark aur light dono themes, mobile par poora responsive.
+- Chat history browser mein rehti hai (`localStorage`) — search, delete,
+  din ke hisab se grouping.
+- Har jawab ke neeche uska source: `neural` / `memory` / `memory rescue` /
+  `fallback`, sath mein waqt.
+- **Model** panel: parameters, layers, heads, vocab aur context meter.
+- Mode composer mein: Auto · Neural · Memory.
+- Jawab ke beech mein stop, phir retry aur copy.
+- Shortcuts: `Ctrl/⌘+K` nayi chat, `Ctrl/⌘+B` sidebar, `Esc` band karein.
 
-Shortcuts:
-
-| Key | Kaam |
-|---|---|
-| `Ctrl/⌘ + K` | Nayi chat |
-| `Ctrl/⌘ + B` | Sidebar |
-| `Ctrl/⌘ + I` | "Andar" panel |
-| `/` | Composer par focus |
-| `Esc` | Popover band / generation rokein |
-| `Enter` · `Shift+Enter` | Bhejen · nayi line |
+UI English mein hai; jawab ki zaban aap ke corpus par hai — abhi wo
+Roman Urdu hai.
 
 ---
 

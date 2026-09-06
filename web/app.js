@@ -1,14 +1,12 @@
 'use strict';
 /* =============================================================================
-   Mine AI — interface logic.
-   Koi framework nahi. Chat history browser mein rehti hai, server par nahi.
+   Mine AI — interface logic. No framework. Chats live in the browser.
    ========================================================================== */
 
 const $ = (id) => document.getElementById(id);
 
 const el = {
   app: $('app'),
-  sidebar: $('sidebar'),
   scrim: $('scrim'),
   history: $('history'),
   search: $('searchInput'),
@@ -21,14 +19,12 @@ const el = {
   stream: $('stream'),
   messages: $('messages'),
   empty: $('empty'),
-  greeting: $('greeting'),
   chips: $('chips'),
   jump: $('jumpBtn'),
   composer: $('composer'),
   input: $('input'),
   send: $('sendBtn'),
   modeGroup: $('modeGroup'),
-  segThumb: $('segThumb'),
   tuneBtn: $('tuneBtn'),
   tunePop: $('tunePop'),
   temperature: $('temperature'),
@@ -54,14 +50,13 @@ const state = {
   mode: 'auto',
   temperature: 0.75,
   maxTokens: 60,
-  theme: 'dark',
+  theme: 'light',
   busy: false,
   controller: null,
   info: null,
 };
 
 /* ------------------------------- storage -------------------------------- */
-// Private window ya blocked storage mein bhi app chalna chahiye.
 
 function readStore(key, fallback) {
   try {
@@ -76,7 +71,7 @@ function writeStore(key, value) {
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (err) {
-    /* storage band hai — chat sirf is session tak rahegi */
+    /* storage blocked — chats stay for this session only */
   }
 }
 
@@ -93,10 +88,10 @@ const savePrefs = () =>
 /* -------------------------------- theme --------------------------------- */
 
 function applyTheme(theme) {
-  state.theme = theme === 'light' ? 'light' : 'dark';
+  state.theme = theme === 'dark' ? 'dark' : 'light';
   document.documentElement.dataset.theme = state.theme;
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.content = state.theme === 'light' ? '#f7f4ef' : '#0a0a0c';
+  if (meta) meta.content = state.theme === 'dark' ? '#131316' : '#fbfaf8';
 }
 
 /* -------------------------------- toast --------------------------------- */
@@ -106,43 +101,33 @@ function toast(message) {
   el.toast.textContent = message;
   el.toast.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.toast.classList.remove('show'), 1900);
+  toastTimer = setTimeout(() => el.toast.classList.remove('show'), 1800);
 }
 
 /* ------------------------------- helpers -------------------------------- */
 
-function timeGreeting() {
-  const h = new Date().getHours();
-  if (h < 5) return 'shab bakhair';
-  if (h < 12) return 'subah bakhair';
-  if (h < 16) return 'dopahar bakhair';
-  if (h < 20) return 'shaam bakhair';
-  return 'shab bakhair';
-}
-
 function titleFrom(text) {
   const clean = text.replace(/\s+/g, ' ').trim();
-  return clean.length > 42 ? clean.slice(0, 42) + '…' : clean || 'Nayi chat';
+  return clean.length > 40 ? clean.slice(0, 40) + '…' : clean || 'New chat';
 }
 
 function dayBucket(ts) {
   const now = new Date();
-  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-  if (ts >= startOfToday) return 'Aaj';
-  if (ts >= startOfToday - 86400000) return 'Kal';
-  if (ts >= startOfToday - 7 * 86400000) return 'Pichle 7 din';
-  return 'Us se pehle';
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (ts >= today) return 'Today';
+  if (ts >= today - 86400000) return 'Yesterday';
+  if (ts >= today - 7 * 86400000) return 'Previous 7 days';
+  return 'Older';
 }
 
-/** Server ke bagair tokens ka andaza — sirf context meter dikhane ke liye. */
+/** Rough client-side estimate, only used for the context meter. */
 const estimateTokens = (text) => Math.ceil(text.trim().length / 3.4);
 
-function nearBottom(px = 120) {
-  return el.stream.scrollHeight - el.stream.scrollTop - el.stream.clientHeight < px;
-}
+const nearBottom = (px = 120) =>
+  el.stream.scrollHeight - el.stream.scrollTop - el.stream.clientHeight < px;
 
 function scrollToEnd(force = false) {
-  if (force || nearBottom(220)) el.stream.scrollTop = el.stream.scrollHeight;
+  if (force || nearBottom(200)) el.stream.scrollTop = el.stream.scrollHeight;
 }
 
 const icon = (paths) => `<svg viewBox="0 0 20 20" aria-hidden="true">${paths}</svg>`;
@@ -162,7 +147,7 @@ function newChat({ silent = false } = {}) {
   state.currentId = null;
   el.messages.innerHTML = '';
   el.empty.hidden = false;
-  el.title.textContent = 'Nayi chat';
+  el.title.textContent = 'New chat';
   renderHistory();
   updateContextMeter();
   if (!silent) el.input.focus();
@@ -208,7 +193,7 @@ function deleteChat(id, event) {
   saveChats();
   if (state.currentId === id) newChat({ silent: true });
   else renderHistory();
-  toast('Chat hata di');
+  toast('Chat deleted');
 }
 
 /* ------------------------------ rendering ------------------------------- */
@@ -228,7 +213,7 @@ function renderHistory() {
   if (!list.length) {
     const empty = document.createElement('p');
     empty.className = 'hist-empty';
-    empty.textContent = query ? 'Kuch nahi mila.' : 'Abhi koi chat nahi.';
+    empty.textContent = query ? 'No matches' : 'No chats yet';
     el.history.appendChild(empty);
     return;
   }
@@ -257,7 +242,7 @@ function renderHistory() {
     const del = document.createElement('span');
     del.className = 'hist-del';
     del.setAttribute('role', 'button');
-    del.setAttribute('aria-label', 'Chat hatayen');
+    del.setAttribute('aria-label', 'Delete chat');
     del.innerHTML = icon(ICONS.close);
     del.addEventListener('click', (e) => deleteChat(chat.id, e));
     item.appendChild(del);
@@ -281,7 +266,7 @@ function makeBotShell() {
   const row = document.createElement('div');
   row.className = 'msg bot';
   row.innerHTML =
-    '<svg class="mark msg-mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#gemMark"/></svg>' +
+    '<svg class="msg-mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#gemMark"/></svg>' +
     '<div class="body"><div class="text"></div></div>';
   el.messages.appendChild(row);
   return { row, body: row.querySelector('.body'), text: row.querySelector('.text') };
@@ -299,26 +284,16 @@ function metaNode(meta, getText, onRegenerate) {
   }
 
   const bits = [];
-  if (meta.stopped) bits.push('roka gaya');
+  if (meta.stopped) bits.push('stopped');
   if (typeof meta.ms === 'number') bits.push(`${meta.ms} ms`);
-  if (meta.source === 'neural' && meta.tokens) {
-    bits.push(`${meta.tokens} tokens`);
-    if (meta.ms > 40) bits.push(`${(meta.tokens / (meta.ms / 1000)).toFixed(1)} tok/s`);
-  }
-  if (meta.source && meta.source !== 'neural' && meta.score > 0) {
-    bits.push(`match ${meta.score.toFixed(2)}`);
-  }
 
-  bits.forEach((bit, i) => {
-    if (i) {
-      const sep = document.createElement('span');
-      sep.className = 'meta-sep';
-      sep.textContent = '·';
-      wrap.appendChild(sep);
-    }
+  bits.forEach((bit) => {
+    const sep = document.createElement('span');
+    sep.className = 'meta-sep';
+    sep.textContent = '·';
     const s = document.createElement('span');
     s.textContent = bit;
-    wrap.appendChild(s);
+    wrap.append(sep, s);
   });
 
   const tools = document.createElement('div');
@@ -328,14 +303,14 @@ function metaNode(meta, getText, onRegenerate) {
   copyBtn.type = 'button';
   copyBtn.className = 'tool';
   copyBtn.title = 'Copy';
-  copyBtn.setAttribute('aria-label', 'Jawab copy karen');
+  copyBtn.setAttribute('aria-label', 'Copy reply');
   copyBtn.innerHTML = icon(ICONS.copy);
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(getText());
-      toast('Copy ho gaya');
+      toast('Copied');
     } catch (err) {
-      toast('Copy nahi ho saka');
+      toast('Could not copy');
     }
   });
   tools.appendChild(copyBtn);
@@ -344,8 +319,8 @@ function metaNode(meta, getText, onRegenerate) {
     const redo = document.createElement('button');
     redo.type = 'button';
     redo.className = 'tool';
-    redo.title = 'Dobara';
-    redo.setAttribute('aria-label', 'Dobara jawab banayen');
+    redo.title = 'Retry';
+    redo.setAttribute('aria-label', 'Generate again');
     redo.innerHTML = icon(ICONS.redo);
     redo.addEventListener('click', onRegenerate);
     tools.appendChild(redo);
@@ -364,37 +339,30 @@ function addBotMessage(text, meta) {
 
 /* -------------------------------- rail ---------------------------------- */
 
+function statCard(label, value, wide = false) {
+  const dl = document.createElement('dl');
+  dl.className = 'stat' + (wide ? ' wide' : '');
+  const dt = document.createElement('dt');
+  dt.textContent = label;
+  const dd = document.createElement('dd');
+  dd.textContent = value;
+  dl.append(dt, dd);
+  return dl;
+}
+
 function renderStats(info) {
-  const stats = [
+  el.statGrid.innerHTML = '';
+  const rows = [
     ['Parameters', info.params.toLocaleString()],
     ['Vocab', info.vocabSize.toLocaleString()],
     ['Layers', String(info.layers)],
     ['Heads', String(info.heads)],
     ['Embedding', info.embedding + 'D'],
     ['Context', info.blockSize + ' tok'],
-    ['Memory', info.memoryEntries + ' baatein'],
-    ['Steps', info.steps ? info.steps.toLocaleString() : '—'],
   ];
-  el.statGrid.innerHTML = '';
-  for (const [label, value] of stats) {
-    const dl = document.createElement('dl');
-    dl.className = 'stat';
-    const dt = document.createElement('dt');
-    dt.textContent = label;
-    const dd = document.createElement('dd');
-    dd.textContent = value;
-    dl.append(dt, dd);
-    el.statGrid.appendChild(dl);
-  }
+  for (const [label, value] of rows) el.statGrid.appendChild(statCard(label, value));
   if (typeof info.valLoss === 'number') {
-    const dl = document.createElement('dl');
-    dl.className = 'stat wide';
-    const dt = document.createElement('dt');
-    dt.textContent = 'Training loss (val)';
-    const dd = document.createElement('dd');
-    dd.textContent = info.valLoss.toFixed(4);
-    dl.append(dt, dd);
-    el.statGrid.appendChild(dl);
+    el.statGrid.appendChild(statCard('Validation loss', info.valLoss.toFixed(4), true));
   }
 }
 
@@ -407,40 +375,27 @@ function updateContextMeter() {
       used += estimateTokens(chat.messages[i].text) + 1;
     }
   }
-  const shown = Math.min(used, block);
   el.ctxFill.style.width = Math.min(100, Math.round((used / block) * 100)) + '%';
-  el.ctxNote.textContent = `${shown} / ${block} tokens (andaza)`;
+  el.ctxNote.textContent = `${Math.min(used, block)} / ${block} tokens`;
 }
 
 async function loadInfo() {
   try {
     const res = await fetch('/api/info');
     const info = await res.json();
-    if (!res.ok) throw new Error(info.error || 'model load nahi hua');
+    if (!res.ok) throw new Error(info.error || 'model not loaded');
     state.info = info;
     renderStats(info);
     el.modelPulse.className = 'pulse live';
     el.modelChipText.textContent =
       `${info.layers}L · ${info.heads}H · ${info.embedding}D · ${Math.round(info.params / 1000)}k`;
-    el.modelChipText.parentElement.title =
-      `${info.params.toLocaleString()} parameters · vocab ${info.vocabSize} · context ${info.blockSize} tokens`;
     updateContextMeter();
   } catch (err) {
     el.modelPulse.className = 'pulse dead';
-    el.modelChipText.textContent = 'model nahi mila';
-    el.modelChipText.parentElement.title = err.message;
+    el.modelChipText.textContent = 'no model';
     el.statGrid.innerHTML = '';
-    for (const [label, value] of [['Model', err.message], ['Hal', 'npm run train']]) {
-      const dl = document.createElement('dl');
-      dl.className = 'stat wide';
-      const dt = document.createElement('dt');
-      dt.textContent = label;
-      const dd = document.createElement('dd');
-      dd.textContent = value;
-      dd.style.fontSize = '13px';
-      dl.append(dt, dd);
-      el.statGrid.appendChild(dl);
-    }
+    el.statGrid.appendChild(statCard('Model', err.message, true));
+    el.statGrid.appendChild(statCard('Fix', 'npm run train', true));
   }
 }
 
@@ -488,12 +443,10 @@ async function submit(text) {
   await run(chat);
 }
 
-/** Server se jawab lekar live stream karta hai. */
 async function run(chat) {
   setBusy(true);
   const shell = makeBotShell();
-  shell.row.classList.add('thinking');
-  shell.text.innerHTML = '<span class="thinking-line">soch raha hoon…</span>';
+  shell.text.innerHTML = '<span class="thinking-line">Thinking…</span>';
   scrollToEnd(true);
 
   const controller = new AbortController();
@@ -506,7 +459,6 @@ async function run(chat) {
   const beginStream = () => {
     if (started) return;
     started = true;
-    shell.row.classList.remove('thinking');
     shell.row.classList.add('streaming');
     shell.text.textContent = '';
   };
@@ -526,7 +478,7 @@ async function run(chat) {
 
     if (!res.ok || !res.body) {
       const err = await res.json().catch(() => ({}));
-      throw new Error(err.error || `server ne ${res.status} kaha`);
+      throw new Error(err.error || `server returned ${res.status}`);
     }
 
     const reader = res.body.getReader();
@@ -584,13 +536,13 @@ async function run(chat) {
       }
     } else {
       beginStream();
-      answer = `Masla aa gaya — ${err.message}`;
+      answer = `Something went wrong — ${err.message}`;
       shell.text.textContent = answer;
       finalMeta = { source: 'error' };
     }
   }
 
-  shell.row.classList.remove('thinking', 'streaming');
+  shell.row.classList.remove('streaming');
   state.controller = null;
   setBusy(false);
 
@@ -612,7 +564,7 @@ async function run(chat) {
 
 function autoGrow() {
   el.input.style.height = 'auto';
-  el.input.style.height = Math.min(el.input.scrollHeight, 190) + 'px';
+  el.input.style.height = Math.min(el.input.scrollHeight, 180) + 'px';
 }
 
 el.composer.addEventListener('submit', (e) => {
@@ -653,20 +605,11 @@ el.stream.addEventListener('scroll', () => {
 });
 el.jump.addEventListener('click', () => scrollToEnd(true));
 
-/* mode segmented control */
-function setMode(mode, animate = true) {
+function setMode(mode) {
   state.mode = mode;
-  const buttons = el.modeGroup.querySelectorAll('.seg');
-  let active = buttons[0];
-  buttons.forEach((b) => {
-    const on = b.dataset.mode === mode;
-    b.setAttribute('aria-checked', on ? 'true' : 'false');
-    if (on) active = b;
+  el.modeGroup.querySelectorAll('.seg').forEach((b) => {
+    b.setAttribute('aria-checked', b.dataset.mode === mode ? 'true' : 'false');
   });
-  if (!animate) el.segThumb.style.transition = 'none';
-  el.segThumb.style.width = active.offsetWidth + 'px';
-  el.segThumb.style.transform = `translateX(${active.offsetLeft - 3}px)`;
-  if (!animate) requestAnimationFrame(() => (el.segThumb.style.transition = ''));
   savePrefs();
 }
 
@@ -675,7 +618,6 @@ el.modeGroup.addEventListener('click', (e) => {
   if (seg) setMode(seg.dataset.mode);
 });
 
-/* tune popover */
 const closeTune = () => (el.tunePop.hidden = true);
 
 el.tuneBtn.addEventListener('click', (e) => {
@@ -697,7 +639,6 @@ el.maxTokens.addEventListener('input', () => {
   savePrefs();
 });
 
-/* rail */
 function toggleRail(force) {
   const open = force === undefined ? !el.app.classList.contains('rail-open') : force;
   el.app.classList.toggle('rail-open', open);
@@ -707,7 +648,6 @@ function toggleRail(force) {
 el.railBtn.addEventListener('click', () => toggleRail());
 el.railClose.addEventListener('click', () => toggleRail(false));
 
-/* sidebar */
 const isMobile = () => window.matchMedia('(max-width: 820px)').matches;
 
 function openMobileSidebar() {
@@ -721,7 +661,7 @@ function closeMobileSidebar() {
   el.scrim.classList.remove('show');
   setTimeout(() => {
     if (!el.app.classList.contains('side-open')) el.scrim.hidden = true;
-  }, 300);
+  }, 260);
 }
 
 function toggleSidebar() {
@@ -740,11 +680,10 @@ el.expand.addEventListener('click', toggleSidebar);
 el.scrim.addEventListener('click', closeMobileSidebar);
 
 el.theme.addEventListener('click', () => {
-  applyTheme(state.theme === 'light' ? 'dark' : 'light');
+  applyTheme(state.theme === 'dark' ? 'light' : 'dark');
   savePrefs();
 });
 
-/* keyboard */
 document.addEventListener('keydown', (e) => {
   const mod = e.metaKey || e.ctrlKey;
   const key = e.key.toLowerCase();
@@ -755,26 +694,18 @@ document.addEventListener('keydown', (e) => {
   } else if (mod && key === 'b') {
     e.preventDefault();
     toggleSidebar();
-  } else if (mod && key === 'i') {
-    e.preventDefault();
-    toggleRail();
   } else if (e.key === 'Escape') {
     if (!el.tunePop.hidden) closeTune();
     else if (el.app.classList.contains('side-open')) closeMobileSidebar();
     else if (state.busy) stop();
-  } else if (e.key === '/' && !e.target.closest('input, textarea')) {
-    e.preventDefault();
-    el.input.focus();
   }
 });
-
-window.addEventListener('resize', () => setMode(state.mode, false));
 
 /* --------------------------------- boot --------------------------------- */
 
 function boot() {
   const prefs = readStore(KEYS.prefs, {});
-  applyTheme(prefs.theme || 'dark');
+  applyTheme(prefs.theme === 'dark' ? 'dark' : 'light');
 
   state.temperature = typeof prefs.temperature === 'number' ? prefs.temperature : 0.75;
   state.maxTokens = typeof prefs.maxTokens === 'number' ? prefs.maxTokens : 60;
@@ -790,14 +721,7 @@ function boot() {
     ? stored.filter((c) => c && typeof c.id === 'string' && Array.isArray(c.messages))
     : [];
 
-  el.greeting.innerHTML = '';
-  el.greeting.append('Salam, ');
-  const accent = document.createElement('span');
-  accent.className = 'accent';
-  accent.textContent = timeGreeting();
-  el.greeting.append(accent, '.');
-
-  setMode(['auto', 'neural', 'memory'].includes(prefs.mode) ? prefs.mode : 'auto', false);
+  setMode(['auto', 'neural', 'memory'].includes(prefs.mode) ? prefs.mode : 'auto');
   renderHistory();
   setBusy(false);
   loadInfo();
