@@ -1,74 +1,232 @@
 <!doctype html>
-<html lang="ur" dir="ltr">
+<html lang="ur">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>Mine AI</title>
-  <meta name="description" content="Mine AI — scratch se bana hua chat AI. No APIs." />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><text y='26' font-size='26'>🧠</text></svg>" />
+  <meta name="description" content="Mine AI — aap ki apni khaan. Scratch se bana model, aap ke computer par." />
+  <meta name="theme-color" content="#0a0a0c" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 2 29 12 16 30 3 12Z' fill='none' stroke='%23ff8a3d' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M3 12h26' stroke='%23ff8a3d' stroke-width='2'/%3E%3C/svg%3E" />
   <link rel="stylesheet" href="/style.css" />
 </head>
 <body>
-  <div class="app">
-    <header class="topbar">
-      <div class="brand">
-        <span class="logo" aria-hidden="true">◈</span>
-        <div>
-          <h1>Mine AI</h1>
-          <p id="modelLine" class="sub">model load ho raha hai…</p>
-        </div>
-      </div>
-      <div class="controls">
-        <label class="control">
-          <span>Mode</span>
-          <select id="mode">
-            <option value="auto">Auto</option>
-            <option value="neural">Neural only</option>
-            <option value="memory">Memory only</option>
-          </select>
-        </label>
-        <label class="control">
-          <span>Temp <b id="tempValue">0.75</b></span>
-          <input id="temperature" type="range" min="0" max="1.4" step="0.05" value="0.75" />
-        </label>
-        <button id="clearBtn" class="ghost" type="button">Nayi chat</button>
-        <button id="themeBtn" class="ghost" type="button" aria-label="Theme badlen">Dark</button>
-      </div>
-    </header>
+  <div class="grain" aria-hidden="true"></div>
 
-    <main id="chat" class="chat" aria-live="polite">
-      <div class="welcome" id="welcome">
-        <div class="welcome-logo">◈</div>
-        <h2>Salam! Main Mine AI hoon.</h2>
-        <p>
-          Main scratch se bana hoon — apna tokenizer, apna transformer, apna training loop.
-          Koi API nahi, sab kuch aap ke computer par.
-        </p>
-        <div class="chips">
-          <button class="chip" type="button">tumhara naam kya hai</button>
-          <button class="chip" type="button">tum kaise kaam karte ho</button>
-          <button class="chip" type="button">koi joke sunao</button>
-          <button class="chip" type="button">mujhe apna ai banana hai</button>
-        </div>
-      </div>
-    </main>
+  <!-- ======================= gem mark (reused via <use>) ======================= -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="gem" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="var(--ember-hi)" />
+        <stop offset="55%" stop-color="var(--ember)" />
+        <stop offset="100%" stop-color="var(--ember-lo)" />
+      </linearGradient>
+      <symbol id="gemMark" viewBox="0 0 32 32">
+        <path class="gem-fill" d="M16 2 29 12 16 30 3 12Z" fill="url(#gem)" />
+        <path class="gem-edge" d="M16 2 29 12 16 30 3 12Z" fill="none" stroke="url(#gem)" stroke-width="1.7" stroke-linejoin="round" />
+        <path class="gem-facets" d="M3 12h26M16 2 11 12l5 18M16 2l5 10-5 18" fill="none" stroke="url(#gem)" stroke-width="1.1" stroke-linejoin="round" />
+      </symbol>
+    </defs>
+  </svg>
 
-    <form class="composer" id="composer">
-      <textarea
-        id="input"
-        rows="1"
-        placeholder="Kuch likhiye… (Enter bhejne ke liye, Shift+Enter nayi line)"
-        autocomplete="off"
-      ></textarea>
-      <button id="sendBtn" type="submit" aria-label="Bhejen">
-        <span class="send-icon">➤</span>
+  <div class="app" id="app">
+
+    <!-- ============================== sidebar ============================== -->
+    <aside class="sidebar" id="sidebar" aria-label="Chat history">
+      <div class="side-head">
+        <a class="wordmark" href="/" aria-label="Mine AI">
+          <svg class="mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#gemMark" /></svg>
+          <span class="wordmark-text"><em>Mine</em><b>AI</b></span>
+        </a>
+        <button class="icon-btn side-collapse" id="collapseBtn" type="button" title="Sidebar chhupayen (Ctrl+B)" aria-label="Sidebar chhupayen">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="2.5"/><path d="M8 3.5v13"/></svg>
+        </button>
+      </div>
+
+      <button class="new-chat" id="newChatBtn" type="button">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4.5v11M4.5 10h11"/></svg>
+        <span>Nayi chat</span>
+        <kbd>⌘K</kbd>
       </button>
-    </form>
 
-    <footer class="footnote">
-      <span id="statusLine">Sab kuch local — koi data bahar nahi jata.</span>
-    </footer>
+      <div class="side-search">
+        <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="M13.2 13.2 17 17"/></svg>
+        <input id="searchInput" type="search" placeholder="Chats dhoondein" autocomplete="off" spellcheck="false" />
+      </div>
+
+      <nav class="history" id="history" aria-label="Purani chats"></nav>
+
+      <div class="side-foot">
+        <div class="chip-model" id="modelChip" title="Model ki tafseel">
+          <span class="pulse" id="modelPulse"></span>
+          <span class="chip-text" id="modelChipText">model load ho raha hai…</span>
+        </div>
+        <p class="side-note">Sab kuch aap ke computer par. Koi API nahi.</p>
+      </div>
+    </aside>
+
+    <div class="scrim" id="scrim" hidden></div>
+
+    <!-- =============================== main =============================== -->
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn only-mobile" id="menuBtn" type="button" aria-label="Menu kholen">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h10"/></svg>
+        </button>
+
+        <button class="icon-btn only-collapsed" id="expandBtn" type="button" title="Sidebar kholen (Ctrl+B)" aria-label="Sidebar kholen">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="2.5"/><path d="M8 3.5v13"/></svg>
+        </button>
+
+        <div class="topbar-title" id="topbarTitle">Nayi chat</div>
+
+        <div class="topbar-actions">
+          <button class="pill-btn" id="railBtn" type="button" title="Model ke andar jhankein">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2.6 16.5 7.6 10 17.4 3.5 7.6Z"/><path d="M3.5 7.6h13"/></svg>
+            <span>Andar</span>
+          </button>
+          <button class="icon-btn" id="themeBtn" type="button" title="Theme badlein" aria-label="Theme badlein">
+            <svg class="ico-moon" viewBox="0 0 20 20" aria-hidden="true"><path d="M16 11.7A6.6 6.6 0 0 1 8.3 4a6.6 6.6 0 1 0 7.7 7.7Z"/></svg>
+            <svg class="ico-sun" viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="3.6"/><path d="M10 1.8v2.1M10 16.1v2.1M18.2 10h-2.1M3.9 10H1.8M15.8 4.2l-1.5 1.5M5.7 14.3l-1.5 1.5M15.8 15.8l-1.5-1.5M5.7 5.7 4.2 4.2"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div class="stream" id="stream">
+        <div class="stream-inner">
+
+          <!-- empty state -->
+          <section class="empty" id="empty">
+            <div class="halo" aria-hidden="true"></div>
+            <svg class="empty-mark" viewBox="0 0 32 32" aria-hidden="true"><use href="#gemMark" /></svg>
+            <h1 class="empty-title" id="greeting">Salam.</h1>
+            <p class="empty-sub">
+              Main <strong>Mine AI</strong> hoon — aap ki apni khaan se nikla hua model.
+              Har weight isi computer par bana, har lafz yahin rehta hai.
+            </p>
+            <div class="chips" id="chips">
+              <button class="chip" type="button" data-q="tumhara naam kya hai">
+                <span class="chip-k">shanakht</span> tumhara naam kya hai
+              </button>
+              <button class="chip" type="button" data-q="tum kaise kaam karte ho">
+                <span class="chip-k">andar</span> tum kaise kaam karte ho
+              </button>
+              <button class="chip" type="button" data-q="mujhe apna ai banana hai">
+                <span class="chip-k">seekhen</span> mujhe apna ai banana hai
+              </button>
+              <button class="chip" type="button" data-q="koi joke sunao">
+                <span class="chip-k">mazaq</span> koi joke sunao
+              </button>
+            </div>
+          </section>
+
+          <div class="messages" id="messages"></div>
+        </div>
+      </div>
+
+      <button class="jump" id="jumpBtn" type="button" aria-label="Neeche jayen" hidden>
+        <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 4v12M5 11l5 5 5-5"/></svg>
+      </button>
+
+      <!-- composer -->
+      <div class="dock">
+        <form class="composer" id="composer">
+          <div class="composer-glow" aria-hidden="true"></div>
+          <textarea
+            id="input"
+            rows="1"
+            placeholder="Kuch poochiye…"
+            autocomplete="off"
+            spellcheck="false"
+          ></textarea>
+
+          <div class="composer-foot">
+            <div class="segmented" id="modeGroup" role="radiogroup" aria-label="Jawab ka zariya">
+              <span class="seg-thumb" id="segThumb" aria-hidden="true"></span>
+              <button class="seg" type="button" role="radio" data-mode="auto" aria-checked="true">Auto</button>
+              <button class="seg" type="button" role="radio" data-mode="neural" aria-checked="false">Neural</button>
+              <button class="seg" type="button" role="radio" data-mode="memory" aria-checked="false">Memory</button>
+            </div>
+
+            <div class="composer-right">
+              <div class="tune">
+                <button class="icon-btn small" id="tuneBtn" type="button" title="Sampling settings" aria-label="Settings">
+                  <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6h12M4 10h12M4 14h12"/><circle cx="7.5" cy="6" r="1.9"/><circle cx="12.5" cy="10" r="1.9"/><circle cx="6.5" cy="14" r="1.9"/></svg>
+                </button>
+                <div class="popover" id="tunePop" hidden>
+                  <label class="tune-row">
+                    <span>Temperature <b id="tempOut">0.75</b></span>
+                    <input id="temperature" type="range" min="0" max="1.4" step="0.05" value="0.75" />
+                    <small>Kam = mohtaat, zyada = tajurbaati</small>
+                  </label>
+                  <label class="tune-row">
+                    <span>Jawab ki lambai <b id="lenOut">60</b></span>
+                    <input id="maxTokens" type="range" min="16" max="160" step="4" value="60" />
+                    <small>zyada se zyada tokens</small>
+                  </label>
+                </div>
+              </div>
+
+              <button class="send" id="sendBtn" type="submit" aria-label="Bhejen">
+                <svg class="ico-send" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 16V4M5 9l5-5 5 5"/></svg>
+                <svg class="ico-stop" viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="8" height="8" rx="2"/></svg>
+              </button>
+            </div>
+          </div>
+        </form>
+
+        <p class="hints">
+          <kbd>Enter</kbd> bhejen · <kbd>Shift</kbd>+<kbd>Enter</kbd> nayi line · <kbd>/</kbd> likhna shuru
+        </p>
+      </div>
+    </div>
+
+    <!-- ============================ brain rail ============================ -->
+    <aside class="rail" id="rail" aria-label="Model ke andar" hidden>
+      <div class="rail-head">
+        <h2>Model ke andar</h2>
+        <button class="icon-btn" id="railClose" type="button" aria-label="Band karen">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 5l10 10M15 5 5 15"/></svg>
+        </button>
+      </div>
+
+      <div class="rail-body">
+        <p class="rail-lead">
+          Ye koi API nahi. Neeche wahi model hai jo is repo mein likha gaya —
+          aap usay khud train kar sakte hain.
+        </p>
+
+        <div class="stat-grid" id="statGrid"></div>
+
+        <section class="rail-block">
+          <h3>Context</h3>
+          <div class="meter"><span id="ctxFill"></span></div>
+          <p class="rail-note" id="ctxNote">— / — tokens (andaza)</p>
+        </section>
+
+        <section class="rail-block">
+          <h3>Zariye</h3>
+          <ul class="legend">
+            <li><span class="dot neural"></span><b>Neural</b> — transformer khud lafz bana raha hai.</li>
+            <li><span class="dot memory"></span><b>Memory</b> — corpus se milta julta jawab mila.</li>
+            <li><span class="dot memory-rescue"></span><b>Rescue</b> — model bhatka, memory ne sambhala.</li>
+            <li><span class="dot fallback"></span><b>Fallback</b> — dono ke paas jawab nahi tha.</li>
+          </ul>
+        </section>
+
+        <section class="rail-block">
+          <h3>Rasta</h3>
+          <ol class="flow">
+            <li><span>1</span>Aap ka jumla BPE tokens mein tootta hai</li>
+            <li><span>2</span>Har layer attention se rishtay dekhti hai</li>
+            <li><span>3</span>Aakhri layer agla token chunti hai</li>
+            <li><span>4</span>Yehi baar baar — jab tak jumla poora na ho</li>
+          </ol>
+        </section>
+      </div>
+    </aside>
   </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <script src="/app.js"></script>
 </body>

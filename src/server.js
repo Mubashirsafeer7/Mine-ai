@@ -160,6 +160,7 @@ async function handleChat(req, res) {
           text: chunk.text,
           source: chunk.source,
           score: Number((chunk.score || 0).toFixed(3)),
+          tokens: chunk.tokens || 0,
           ms: Date.now() - startedAt,
         });
       }
